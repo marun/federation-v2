@@ -46,6 +46,8 @@ type Controller struct {
 	// Arguments to use when starting new controllers
 	controllerConfig *util.ControllerConfig
 
+	hostClusterFinder util.HostClusterFinder
+
 	client corev1alpha1client.CoreV1alpha1Interface
 
 	// Map of running sync controllers keyed by qualified target type
@@ -75,9 +77,10 @@ func StartController(config *util.ControllerConfig, stopChan <-chan struct{}) {
 // newController returns a new controller to manage FederatedTypeConfig objects.
 func newController(config *util.ControllerConfig, client corev1alpha1client.CoreV1alpha1Interface) *Controller {
 	c := &Controller{
-		controllerConfig: config,
-		client:           client,
-		stopChannels:     make(map[string]chan struct{}),
+		controllerConfig:  config,
+		hostClusterFinder: util.NewHostClusterFinder(config),
+		client:            client,
+		stopChannels:      make(map[string]chan struct{}),
 	}
 
 	c.worker = util.NewReconcileWorker(c.reconcile, util.WorkerTiming{})
@@ -246,7 +249,7 @@ func (c *Controller) getStopChannel(name string) (chan struct{}, bool) {
 func (c *Controller) startSyncController(tc *corev1a1.FederatedTypeConfig) error {
 	kind := tc.Spec.Template.Kind
 	stopChan := make(chan struct{})
-	err := synccontroller.StartFederationSyncController(c.controllerConfig, stopChan, tc)
+	err := synccontroller.StartFederationSyncController(c.controllerConfig, c.hostClusterFinder, stopChan, tc)
 	if err != nil {
 		close(stopChan)
 		return fmt.Errorf("Error starting sync controller for %q: %v", kind, err)

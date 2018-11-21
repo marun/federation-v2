@@ -96,11 +96,13 @@ type FederationSyncController struct {
 	templateClient util.ResourceClient
 
 	fedNamespace string
+
+	hostClusterFinder util.HostClusterFinder
 }
 
 // StartFederationSyncController starts a new sync controller for a type config
-func StartFederationSyncController(controllerConfig *util.ControllerConfig, stopChan <-chan struct{}, typeConfig typeconfig.Interface) error {
-	controller, err := newFederationSyncController(controllerConfig, typeConfig)
+func StartFederationSyncController(controllerConfig *util.ControllerConfig, hostClusterFinder util.HostClusterFinder, stopChan <-chan struct{}, typeConfig typeconfig.Interface) error {
+	controller, err := newFederationSyncController(controllerConfig, hostClusterFinder, typeConfig)
 	if err != nil {
 		return err
 	}
@@ -113,7 +115,7 @@ func StartFederationSyncController(controllerConfig *util.ControllerConfig, stop
 }
 
 // newFederationSyncController returns a new sync controller for the configuration
-func newFederationSyncController(controllerConfig *util.ControllerConfig, typeConfig typeconfig.Interface) (*FederationSyncController, error) {
+func newFederationSyncController(controllerConfig *util.ControllerConfig, hostClusterFinder util.HostClusterFinder, typeConfig typeconfig.Interface) (*FederationSyncController, error) {
 	templateAPIResource := typeConfig.GetTemplate()
 	userAgent := fmt.Sprintf("%s-controller", strings.ToLower(templateAPIResource.Kind))
 
@@ -141,6 +143,7 @@ func newFederationSyncController(controllerConfig *util.ControllerConfig, typeCo
 		fedClient:               fedClient,
 		templateClient:          templateClient,
 		fedNamespace:            controllerConfig.FederationNamespace,
+		hostClusterFinder:       hostClusterFinder,
 	}
 
 	s.worker = util.NewReconcileWorker(s.reconcile, util.WorkerTiming{
@@ -552,6 +555,17 @@ func (s *FederationSyncController) clusterOperations(selectedClusters, unselecte
 
 	targetKind := s.typeConfig.GetTarget().Kind
 	for _, clusterName := range selectedClusters {
+		// Federated operations are not performed on namespaces in the host cluster.
+		if targetKind == util.NamespaceKind {
+			isHostCluster, err := s.hostClusterFinder.IsHostCluster(clusterName)
+			if err != nil {
+				return nil, fmt.Errorf("Failed to determine whether %q was the host cluster: %v", clusterName, err)
+			}
+			if isHostCluster {
+				continue
+			}
+		}
+
 		// TODO(marun) Create the desired object only if needed
 		desiredObj, err := s.objectForCluster(template, clusterOverrides, clusterName)
 		if err != nil {
@@ -573,19 +587,6 @@ func (s *FederationSyncController) clusterOperations(selectedClusters, unselecte
 
 		if found {
 			clusterObj := clusterObj.(*unstructured.Unstructured)
-
-			// If we're a namespace kind and this is an object for the primary
-			// cluster, then skip the version comparison check as we do not
-			// track the cluster version for namespaces in the primary cluster.
-			// This avoids unnecessary updates that triggers an infinite loop
-			// of continually adding finalizers and then removing finalizers,
-			// causing PropagatedVersion to not keep up with the
-			// ResourceVersions being updated.
-			if targetKind == util.NamespaceKind {
-				if util.IsPrimaryCluster(template, clusterObj) {
-					continue
-				}
-			}
 
 			desiredObj, err = s.objectForUpdateOp(desiredObj, clusterObj)
 			if err != nil {
@@ -629,6 +630,17 @@ func (s *FederationSyncController) clusterOperations(selectedClusters, unselecte
 	}
 
 	for _, clusterName := range unselectedClusters {
+		// Federated operations are not performed on namespaces in the host cluster.
+		if targetKind == util.NamespaceKind {
+			isHostCluster, err := s.hostClusterFinder.IsHostCluster(clusterName)
+			if err != nil {
+				return nil, fmt.Errorf("Failed to determine whether %q was the host cluster: %v", clusterName, err)
+			}
+			if isHostCluster {
+				continue
+			}
+		}
+
 		clusterObj, found, err := s.informer.GetTargetStore().GetByKey(clusterName, key)
 		if err != nil {
 			wrappedErr := fmt.Errorf("Failed to get %s %q from cluster %q: %v", targetKind, key, clusterName, err)

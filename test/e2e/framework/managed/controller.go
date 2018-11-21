@@ -38,12 +38,18 @@ type ControllerFixture struct {
 	stopChan chan struct{}
 }
 
+// The host cluster finder is common to all sync controllers
+var hostClusterFinder util.HostClusterFinder
+
 // NewSyncControllerFixture initializes a new sync controller fixture.
 func NewSyncControllerFixture(tl common.TestLogger, controllerConfig *util.ControllerConfig, typeConfig typeconfig.Interface) *ControllerFixture {
 	f := &ControllerFixture{
 		stopChan: make(chan struct{}),
 	}
-	err := sync.StartFederationSyncController(controllerConfig, f.stopChan, typeConfig)
+	if hostClusterFinder == nil {
+		hostClusterFinder = util.NewHostClusterFinder(controllerConfig)
+	}
+	err := sync.StartFederationSyncController(controllerConfig, hostClusterFinder, f.stopChan, typeConfig)
 	if err != nil {
 		tl.Fatalf("Error starting sync controller: %v", err)
 	}
