@@ -242,6 +242,14 @@ func ValidationSchema(specProps v1beta1.JSONSchemaProps) *v1beta1.CustomResource
 						},
 					},
 				},
+				// Require a spec (even if empty) as an aid to users
+				// manually creating federated configmaps or
+				// secrets. These target types do not include a spec,
+				// and the absence of the spec in a federated
+				// equivalent would indicate a malformed resource.
+				Required: []string{
+					"spec",
+				},
 			},
 		},
 	}
