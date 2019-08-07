@@ -175,6 +175,7 @@ func (f *UnmanagedFramework) ControllerConfig() *util.ControllerConfig {
 		},
 		KubeConfig:      f.Config,
 		MinimizeLatency: true,
+		ScaleTesting:    TestContext.ScaleTest,
 	}
 }
 

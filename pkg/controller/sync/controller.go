@@ -86,6 +86,8 @@ type KubeFedSyncController struct {
 	skipAdoptingResources bool
 
 	limitedScope bool
+
+	scaleTesting bool
 }
 
 // StartKubeFedSyncController starts a new sync controller for a type config
@@ -124,6 +126,7 @@ func newKubeFedSyncController(controllerConfig *util.ControllerConfig, typeConfi
 		hostClusterClient:       client,
 		skipAdoptingResources:   controllerConfig.SkipAdoptingResources,
 		limitedScope:            controllerConfig.LimitedScope(),
+		scaleTesting:            controllerConfig.ScaleTesting,
 	}
 
 	s.worker = util.NewReconcileWorker(s.reconcile, util.WorkerTiming{
@@ -563,7 +566,7 @@ func (s *KubeFedSyncController) ensureRemovedOrUnmanaged(fedResource FederatedRe
 		return errors.Wrap(err, "failed to get a list of clusters")
 	}
 
-	dispatcher := dispatch.NewCheckUnmanagedDispatcher(s.informer.GetClientForCluster, fedResource.TargetGVK(), fedResource.TargetName())
+	dispatcher := dispatch.NewCheckUnmanagedDispatcher(s.informer.GetClientForCluster, fedResource.TargetGVK(), fedResource.TargetName(), s.scaleTesting)
 	unreadyClusters := []string{}
 	for _, cluster := range clusters {
 		if !util.IsClusterReady(&cluster.Status) {
@@ -595,7 +598,7 @@ func (s *KubeFedSyncController) handleDeletionInClusters(gvk schema.GroupVersion
 		return false, errors.Wrap(err, "failed to get a list of clusters")
 	}
 
-	dispatcher := dispatch.NewUnmanagedDispatcher(s.informer.GetClientForCluster, gvk, qualifiedName)
+	dispatcher := dispatch.NewUnmanagedDispatcher(s.informer.GetClientForCluster, gvk, qualifiedName, s.scaleTesting)
 	key := qualifiedName.String()
 	retrievalFailureClusters := []string{}
 	unreadyClusters := []string{}
@@ -605,6 +608,15 @@ func (s *KubeFedSyncController) handleDeletionInClusters(gvk schema.GroupVersion
 		if !util.IsClusterReady(&cluster.Status) {
 			unreadyClusters = append(unreadyClusters, clusterName)
 			continue
+		}
+
+		if s.scaleTesting {
+			// The namespace of the resource is the name of the
+			// cluster when scale testing.
+			key = util.QualifiedName{
+				Namespace: clusterName,
+				Name:      qualifiedName.Name,
+			}.String()
 		}
 
 		rawClusterObj, _, err := s.informer.GetTargetStore().GetByKey(clusterName, key)

@@ -50,11 +50,15 @@ type unmanagedDispatcherImpl struct {
 	targetName util.QualifiedName
 
 	recorder dispatchRecorder
+
+	scaleTesting bool
 }
 
-func NewUnmanagedDispatcher(clientAccessor clientAccessorFunc, targetGVK schema.GroupVersionKind, targetName util.QualifiedName) UnmanagedDispatcher {
-	dispatcher := newOperationDispatcher(clientAccessor, nil)
-	return newUnmanagedDispatcher(dispatcher, nil, targetGVK, targetName)
+func NewUnmanagedDispatcher(clientAccessor clientAccessorFunc, targetGVK schema.GroupVersionKind, targetName util.QualifiedName, scaleTesting bool) UnmanagedDispatcher {
+	opDispatcher := newOperationDispatcher(clientAccessor, nil)
+	unmanagedDispatcher := newUnmanagedDispatcher(opDispatcher, nil, targetGVK, targetName)
+	unmanagedDispatcher.scaleTesting = scaleTesting
+	return unmanagedDispatcher
 }
 
 func newUnmanagedDispatcher(dispatcher *operationDispatcherImpl, recorder dispatchRecorder, targetGVK schema.GroupVersionKind, targetName util.QualifiedName) *unmanagedDispatcherImpl {
@@ -75,15 +79,23 @@ func (d *unmanagedDispatcherImpl) Delete(clusterName string) {
 	const op = "delete"
 	const opContinuous = "Deleting"
 	go d.dispatcher.clusterOperation(clusterName, op, func(client generic.Client) util.ReconciliationStatus {
+		targetName := d.targetName
+		if d.scaleTesting {
+			targetName = util.QualifiedName{
+				Namespace: clusterName,
+				Name:      targetName.Name,
+			}
+		}
+
 		if d.recorder == nil {
-			klog.V(2).Infof(eventTemplate, opContinuous, d.targetGVK.Kind, d.targetName, clusterName)
+			klog.V(2).Infof(eventTemplate, opContinuous, d.targetGVK.Kind, targetName, clusterName)
 		} else {
 			d.recorder.recordEvent(clusterName, op, opContinuous)
 		}
 
 		obj := &unstructured.Unstructured{}
 		obj.SetGroupVersionKind(d.targetGVK)
-		err := client.Delete(context.Background(), obj, d.targetName.Namespace, d.targetName.Name)
+		err := client.Delete(context.Background(), obj, targetName.Namespace, targetName.Name)
 		if apierrors.IsNotFound(err) {
 			err = nil
 		}

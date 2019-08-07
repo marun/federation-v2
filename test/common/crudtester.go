@@ -181,7 +181,7 @@ func (c *FederatedTypeCrudTester) CheckUpdate(fedObject *unstructured.Unstructur
 
 	c.tl.Logf("Updating %s %q", kind, qualifiedName)
 	updatedFedObject, err := c.updateObject(apiResource, fedObject, func(obj *unstructured.Unstructured) {
-		overrides, err := util.GetOverrides(obj)
+		overrides, err := util.GetOverridesUnsafe(obj)
 		if err != nil {
 			c.tl.Fatalf("Error retrieving overrides for %s %q: %v", kind, qualifiedName, err)
 		}
@@ -330,9 +330,22 @@ func (c *FederatedTypeCrudTester) CheckDelete(fedObject *unstructured.Unstructur
 	if deletingInCluster {
 		stateMsg = "not present"
 	}
+	overrides, err := util.GetOverridesUnsafe(fedObject)
+	if err != nil {
+		c.tl.Fatalf("Error retrieving overrides: %v", err)
+	}
 	for clusterName, testCluster := range c.testClusters {
+		clusterNamespace := namespace
+		if clusterOverrides, ok := overrides[clusterName]; ok {
+			for _, override := range clusterOverrides {
+				if override.Path == "/metadata/namespace" {
+					clusterNamespace = override.Value.(string)
+					break
+				}
+			}
+		}
 		err = wait.PollImmediate(c.waitInterval, waitTimeout, func() (bool, error) {
-			obj, err := testCluster.Client.Resources(namespace).Get(name, metav1.GetOptions{})
+			obj, err := testCluster.Client.Resources(clusterNamespace).Get(name, metav1.GetOptions{})
 			switch {
 			case !deletingInCluster && apierrors.IsNotFound(err):
 				return false, errors.Errorf("%s %q was unexpectedly deleted from cluster %q", targetKind, qualifiedName, clusterName)
@@ -381,7 +394,7 @@ func (c *FederatedTypeCrudTester) CheckPropagation(fedObject *unstructured.Unstr
 		c.tl.Fatalf("Error computing override hash for %s %q: %v", federatedKind, qualifiedName, err)
 	}
 
-	overridesMap, err := util.GetOverrides(fedObject)
+	overridesMap, err := util.GetOverridesUnsafe(fedObject)
 	if err != nil {
 		c.tl.Fatalf("Error reading cluster overrides for %s %q: %v", federatedKind, qualifiedName, err)
 	}
@@ -413,7 +426,10 @@ func (c *FederatedTypeCrudTester) CheckPropagation(fedObject *unstructured.Unstr
 		} else if c.targetIsNamespace && clusterName == primaryClusterName {
 			c.checkHostNamespaceUnlabeled(testCluster.Client, qualifiedName, targetKind, clusterName)
 		} else {
-			err := c.waitForResourceDeletion(testCluster.Client, qualifiedName, func() bool {
+			// TODO(marun) Hacky hack hack hack
+			clusterQualifiedName := util.QualifiedName{Namespace: clusterName, Name: qualifiedName.Name}
+
+			err := c.waitForResourceDeletion(testCluster.Client, clusterQualifiedName, func() bool {
 				version, ok := c.expectedVersion(qualifiedName, templateVersion, overrideVersion, clusterName)
 				return version == "" && ok
 			})
@@ -542,8 +558,15 @@ func (c *FederatedTypeCrudTester) waitForResource(client util.ResourceClient, qu
 		if len(expectedVersion) == 0 {
 			return false, nil
 		}
-
-		clusterObj, err := client.Resources(qualifiedName.Namespace).Get(qualifiedName.Name, metav1.GetOptions{})
+		namespace := qualifiedName.Namespace
+		if len(expectedOverrides) > 0 {
+			for _, override := range expectedOverrides {
+				if override.Path == "/metadata/namespace" {
+					namespace = override.Value.(string)
+				}
+			}
+		}
+		clusterObj, err := client.Resources(namespace).Get(qualifiedName.Name, metav1.GetOptions{})
 		if err == nil && util.ObjectVersion(clusterObj) == expectedVersion {
 			// Validate that the resource has been labeled properly,
 			// indicating creation or adoption by the sync controller.  This

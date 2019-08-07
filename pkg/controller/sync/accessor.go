@@ -69,6 +69,9 @@ type resourceAccessor struct {
 
 	// Records events on the federated resource
 	eventRecorder record.EventRecorder
+
+	// TODO(marun) Need to find another way to inject this behavior
+	scaleTesting bool
 }
 
 func NewFederatedResourceAccessor(
@@ -86,6 +89,7 @@ func NewFederatedResourceAccessor(
 		fedNamespace:            controllerConfig.KubeFedNamespace,
 		fedNamespaceAPIResource: fedNamespaceAPIResource,
 		eventRecorder:           eventRecorder,
+		scaleTesting:            controllerConfig.ScaleTesting,
 	}
 
 	targetNamespace := controllerConfig.TargetNamespace
@@ -197,6 +201,11 @@ func (a *resourceAccessor) FederatedResource(eventSource util.QualifiedName) (Fe
 		Name:      eventSource.Name,
 	}
 
+	if a.scaleTesting {
+		targetName.Namespace = a.fedNamespace
+		federatedName.Namespace = a.fedNamespace
+	}
+
 	// A federated type for namespace "foo" is namespaced
 	// (e.g. "foo/foo"). An event sourced from a namespace in the host
 	// or member clusters will have the name "foo", and an event
@@ -277,6 +286,7 @@ func (a *resourceAccessor) FederatedResource(eventSource util.QualifiedName) (Fe
 		namespace:         namespace,
 		fedNamespace:      fedNamespace,
 		eventRecorder:     a.eventRecorder,
+		scaleTesting:      a.scaleTesting,
 	}, false, nil
 }
 

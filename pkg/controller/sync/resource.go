@@ -70,6 +70,9 @@ type federatedResource struct {
 	namespace         *unstructured.Unstructured
 	fedNamespace      *unstructured.Unstructured
 	eventRecorder     record.EventRecorder
+
+	// TODO(marun) Need to find another way to inject this behavior
+	scaleTesting bool
 }
 
 func (r *federatedResource) FederatedName() util.QualifiedName {
@@ -242,8 +245,13 @@ func (r *federatedResource) RecordEvent(reason, messageFmt string, args ...inter
 func (r *federatedResource) overridesForCluster(clusterName string) (util.ClusterOverrides, error) {
 	r.Lock()
 	defer r.Unlock()
+	overridesAccessor := util.GetOverrides
+	if r.scaleTesting {
+		overridesAccessor = util.GetOverridesUnsafe
+	}
+
 	if r.overridesMap == nil {
-		overridesMap, err := util.GetOverrides(r.federatedResource)
+		overridesMap, err := overridesAccessor(r.federatedResource)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error reading cluster overrides")
 		}

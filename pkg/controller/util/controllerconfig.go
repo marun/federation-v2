@@ -73,8 +73,19 @@ type ControllerConfig struct {
 	ClusterUnavailableDelay time.Duration
 	MinimizeLatency         bool
 	SkipAdoptingResources   bool
+
+	// TODO(marun) Figure out how to avoid polluting runtime
+	// configuration for this test-specific option.
+	ScaleTesting bool
 }
 
 func (c *ControllerConfig) LimitedScope() bool {
 	return c.KubeFedNamespaces.TargetNamespace != metav1.NamespaceAll
+}
+
+func (c *ControllerConfig) TargetNamespaceForCluster(clusterName string) string {
+	if c.ScaleTesting {
+		return clusterName
+	}
+	return c.TargetNamespace
 }

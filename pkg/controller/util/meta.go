@@ -85,12 +85,8 @@ func ObjectMetaEquivalent(a, b metav1.ObjectMeta) bool {
 // the future the ObjectMeta structure is expanded then any field that is not populated
 // by the api server should be included here.
 func ObjectMetaObjEquivalent(a, b metav1.Object) bool {
-	if a.GetName() != b.GetName() {
-		return false
-	}
-	if a.GetNamespace() != b.GetNamespace() {
-		return false
-	}
+	// Nmae and namespace do not need to be compared
+	// TODO(marun) elaborate
 	aLabels := a.GetLabels()
 	bLabels := b.GetLabels()
 	if !reflect.DeepEqual(aLabels, bLabels) && (len(aLabels) != 0 || len(bLabels) != 0) {

@@ -58,6 +58,7 @@ const (
 	OverridesField        = "overrides"
 	ClusterNameField      = "clusterName"
 	ClusterOverridesField = "clusterOverrides"
+	OpField               = "op"
 	PathField             = "path"
 	ValueField            = "value"
 

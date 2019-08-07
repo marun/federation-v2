@@ -296,16 +296,16 @@ func (f *frameworkWrapper) namespaceTypeConfigOrDie() typeconfig.Interface {
 
 func CreateTestNamespace(client kubeclientset.Interface, baseName string) string {
 	By("Creating a namespace to execute the test in")
-	namespaceName, err := createNamespace(client, baseName)
+	namespaceName, err := CreateNamespace(client, fmt.Sprintf("e2e-tests-%v-", baseName))
 	Expect(err).NotTo(HaveOccurred())
 	By(fmt.Sprintf("Created test namespace %s", namespaceName))
 	return namespaceName
 }
 
-func createNamespace(client kubeclientset.Interface, baseName string) (string, error) {
+func CreateNamespace(client kubeclientset.Interface, generateName string) (string, error) {
 	namespaceObj := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: fmt.Sprintf("e2e-tests-%v-", baseName),
+			GenerateName: generateName,
 		},
 	}
 	// Be robust about making the namespace creation call.

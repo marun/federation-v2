@@ -45,14 +45,17 @@ type checkUnmanagedDispatcherImpl struct {
 
 	targetGVK  schema.GroupVersionKind
 	targetName util.QualifiedName
+
+	scaleTesting bool
 }
 
-func NewCheckUnmanagedDispatcher(clientAccessor clientAccessorFunc, targetGVK schema.GroupVersionKind, targetName util.QualifiedName) CheckUnmanagedDispatcher {
+func NewCheckUnmanagedDispatcher(clientAccessor clientAccessorFunc, targetGVK schema.GroupVersionKind, targetName util.QualifiedName, scaleTesting bool) CheckUnmanagedDispatcher {
 	dispatcher := newOperationDispatcher(clientAccessor, nil)
 	return &checkUnmanagedDispatcherImpl{
-		dispatcher: dispatcher,
-		targetGVK:  targetGVK,
-		targetName: targetName,
+		dispatcher:   dispatcher,
+		targetGVK:    targetGVK,
+		targetName:   targetName,
+		scaleTesting: scaleTesting,
 	}
 }
 
@@ -68,11 +71,19 @@ func (d *checkUnmanagedDispatcherImpl) CheckRemovedOrUnlabeled(clusterName strin
 	const op = "check for deletion of resource or removal of managed label from"
 	const opContinuous = "Checking for deletion of resource or removal of managed label from"
 	go d.dispatcher.clusterOperation(clusterName, op, func(client generic.Client) util.ReconciliationStatus {
-		klog.V(2).Infof(eventTemplate, opContinuous, d.targetGVK.Kind, d.targetName, clusterName)
+		targetName := d.targetName
+		if d.scaleTesting {
+			targetName = util.QualifiedName{
+				Namespace: clusterName,
+				Name:      targetName.Name,
+			}
+		}
+
+		klog.V(2).Infof(eventTemplate, opContinuous, d.targetGVK.Kind, targetName, clusterName)
 
 		clusterObj := &unstructured.Unstructured{}
 		clusterObj.SetGroupVersionKind(d.targetGVK)
-		err := client.Get(context.Background(), clusterObj, d.targetName.Namespace, d.targetName.Name)
+		err := client.Get(context.Background(), clusterObj, targetName.Namespace, targetName.Name)
 		if apierrors.IsNotFound(err) {
 			return util.StatusAllOK
 		}
@@ -101,5 +112,6 @@ func (d *checkUnmanagedDispatcherImpl) CheckRemovedOrUnlabeled(clusterName strin
 }
 
 func (d *checkUnmanagedDispatcherImpl) wrapOperationError(err error, clusterName, operation string) error {
+	// TODO(marun) target name will be wrong from scale testing
 	return wrapOperationError(err, operation, d.targetGVK.Kind, d.targetName.String(), clusterName)
 }

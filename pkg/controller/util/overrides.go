@@ -60,7 +60,7 @@ type GenericOverride struct {
 // Ingress which can exist in different groups at different
 // versions. Users will need to take care not to abuse this
 // capability.
-var invalidPaths = sets.NewString(
+var defaultInvalidPaths = sets.NewString(
 	"/metadata/namespace",
 	"/metadata/name",
 	"/metadata/generateName",
@@ -78,9 +78,17 @@ type OverridesMap map[string]ClusterOverrides
 func (m OverridesMap) ToUnstructuredSlice() []interface{} {
 	overrides := []interface{}{}
 	for clusterName, clusterOverrides := range m {
+		rawClusterOverrides := []interface{}{}
+		for _, clusterOverride := range clusterOverrides {
+			rawClusterOverrides = append(rawClusterOverrides, map[string]interface{}{
+				OpField:    clusterOverride.Op,
+				PathField:  clusterOverride.Path,
+				ValueField: clusterOverride.Value,
+			})
+		}
 		overridesItem := map[string]interface{}{
 			ClusterNameField:      clusterName,
-			ClusterOverridesField: clusterOverrides,
+			ClusterOverridesField: rawClusterOverrides,
 		}
 		overrides = append(overrides, overridesItem)
 	}
@@ -88,8 +96,21 @@ func (m OverridesMap) ToUnstructuredSlice() []interface{} {
 }
 
 // GetOverrides returns a map of overrides populated from the given
-// unstructured object.
+// unstructured object.  Some paths may not be overridden.
 func GetOverrides(rawObj *unstructured.Unstructured) (OverridesMap, error) {
+	return getOverrides(rawObj, defaultInvalidPaths)
+}
+
+// GetOverrides returns a map of overrides populated from the given
+// unstructured object.  Any path may be overridden.
+func GetOverridesUnsafe(rawObj *unstructured.Unstructured) (OverridesMap, error) {
+	return getOverrides(rawObj, sets.String{})
+}
+
+// GetOverrides returns a map of overrides populated from the given
+// unstructured object.  An error will be returned if any any of the
+// overrides target any of the provided invalid paths.
+func getOverrides(rawObj *unstructured.Unstructured, invalidPaths sets.String) (OverridesMap, error) {
 	overridesMap := make(OverridesMap)
 
 	if rawObj == nil {
