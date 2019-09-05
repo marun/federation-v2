@@ -68,11 +68,13 @@ func (d *checkUnmanagedDispatcherImpl) CheckRemovedOrUnlabeled(clusterName strin
 	const op = "check for deletion of resource or removal of managed label from"
 	const opContinuous = "Checking for deletion of resource or removal of managed label from"
 	go d.dispatcher.clusterOperation(clusterName, op, func(client generic.Client) util.ReconciliationStatus {
-		klog.V(2).Infof(eventTemplate, opContinuous, d.targetGVK.Kind, d.targetName, clusterName)
+		targetName := d.targetNameForCluster(clusterName)
+
+		klog.V(2).Infof(eventTemplate, opContinuous, d.targetGVK.Kind, targetName, clusterName)
 
 		clusterObj := &unstructured.Unstructured{}
 		clusterObj.SetGroupVersionKind(d.targetGVK)
-		err := client.Get(context.Background(), clusterObj, d.targetName.Namespace, d.targetName.Name)
+		err := client.Get(context.Background(), clusterObj, targetName.Namespace, targetName.Name)
 		if apierrors.IsNotFound(err) {
 			return util.StatusAllOK
 		}
@@ -101,5 +103,9 @@ func (d *checkUnmanagedDispatcherImpl) CheckRemovedOrUnlabeled(clusterName strin
 }
 
 func (d *checkUnmanagedDispatcherImpl) wrapOperationError(err error, clusterName, operation string) error {
-	return wrapOperationError(err, operation, d.targetGVK.Kind, d.targetName.String(), clusterName)
+	return wrapOperationError(err, operation, d.targetGVK.Kind, d.targetNameForCluster(clusterName).String(), clusterName)
+}
+
+func (d *checkUnmanagedDispatcherImpl) targetNameForCluster(clusterName string) util.QualifiedName {
+	return util.QualifiedNameForCluster(clusterName, d.targetName)
 }

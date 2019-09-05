@@ -49,15 +49,20 @@ func RunE2ETests(t *testing.T) {
 var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 	// Run only on Ginkgo node 1
 
-	if framework.TestContext.InMemoryControllers {
-		// Start the cluster controller to ensure clusters will be
-		// reported as healthy when running the control plane
-		// in-memory.
-		framework.SetUpControlPlane()
+	if !framework.TestContext.ScaleTest {
+		// Scale testing requires performing these steps after the
+		// creation of a simulated federation.
+
+		if framework.TestContext.InMemoryControllers {
+			// Start the cluster controller to ensure clusters will be
+			// reported as healthy when running the control plane
+			// in-memory.
+			framework.SetUpControlPlane()
+		}
+		// Wait for readiness of registered clusters to ensure tests
+		// run against a healthy federation.
+		framework.WaitForUnmanagedClusterReadiness()
 	}
-	// Wait for readiness of registered clusters to ensure tests
-	// run against a healthy control plane.
-	framework.WaitForUnmanagedClusterReadiness()
 
 	return nil
 

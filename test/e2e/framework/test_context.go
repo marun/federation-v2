@@ -36,6 +36,8 @@ type TestContextType struct {
 	LimitedScope                    bool
 	LimitedScopeInMemoryControllers bool
 	WaitForFinalization             bool
+	ScaleTest                       bool
+	ScaleClusterCount               int
 }
 
 func (t *TestContextType) RunControllers() bool {
@@ -69,12 +71,21 @@ func registerFlags(t *TestContextType) {
 		"Whether KubeFed controllers started in memory should target only the test namespace.  If debugging a cluster-scoped control plane outside of a test namespace, this should be set to false.")
 	flag.BoolVar(&t.WaitForFinalization, "wait-for-finalization", true,
 		"Whether the test suite should wait for finalization before stopping fixtures or exiting.  Setting this to false will speed up test execution but likely result in wedged namespaces and is only recommended for disposeable clusters.")
+	flag.BoolVar(&t.ScaleTest, "scale-test", false, "Whether the test suite should be configured for scale testing.  Not compatible with most tests.")
+	flag.IntVar(&t.ScaleClusterCount, "scale-cluster-count", 1, "How many member clusters to simulate when scale testing.")
 }
 
 func validateFlags(t *TestContextType) {
 	if len(t.KubeConfig) == 0 {
 		klog.Fatalf("kubeconfig is required")
 	}
+
+	if t.ScaleTest {
+		t.InMemoryControllers = true
+		t.LimitedScope = true
+		t.WaitForFinalization = false
+	}
+
 	if t.InMemoryControllers {
 		klog.Info("in-memory-controllers=true - this will launch the KubeFed controllers outside the cluster hosting the KubeFed control plane.")
 	}

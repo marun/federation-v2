@@ -75,15 +75,16 @@ func (d *unmanagedDispatcherImpl) Delete(clusterName string) {
 	const op = "delete"
 	const opContinuous = "Deleting"
 	go d.dispatcher.clusterOperation(clusterName, op, func(client generic.Client) util.ReconciliationStatus {
+		targetName := d.targetNameForCluster(clusterName)
 		if d.recorder == nil {
-			klog.V(2).Infof(eventTemplate, opContinuous, d.targetGVK.Kind, d.targetName, clusterName)
+			klog.V(2).Infof(eventTemplate, opContinuous, d.targetGVK.Kind, targetName, clusterName)
 		} else {
 			d.recorder.recordEvent(clusterName, op, opContinuous)
 		}
 
 		obj := &unstructured.Unstructured{}
 		obj.SetGroupVersionKind(d.targetGVK)
-		err := client.Delete(context.Background(), obj, d.targetName.Namespace, d.targetName.Name)
+		err := client.Delete(context.Background(), obj, targetName.Namespace, targetName.Name)
 		if apierrors.IsNotFound(err) {
 			err = nil
 		}
@@ -106,7 +107,7 @@ func (d *unmanagedDispatcherImpl) RemoveManagedLabel(clusterName string, cluster
 	const opContinuous = "Removing managed label from"
 	go d.dispatcher.clusterOperation(clusterName, op, func(client generic.Client) util.ReconciliationStatus {
 		if d.recorder == nil {
-			klog.V(2).Infof(eventTemplate, opContinuous, d.targetGVK.Kind, d.targetName, clusterName)
+			klog.V(2).Infof(eventTemplate, opContinuous, d.targetGVK.Kind, d.targetNameForCluster(clusterName), clusterName)
 		} else {
 			d.recorder.recordEvent(clusterName, op, opContinuous)
 		}
@@ -131,7 +132,11 @@ func (d *unmanagedDispatcherImpl) RemoveManagedLabel(clusterName string, cluster
 }
 
 func (d *unmanagedDispatcherImpl) wrapOperationError(err error, clusterName, operation string) error {
-	return wrapOperationError(err, operation, d.targetGVK.Kind, d.targetName.String(), clusterName)
+	return wrapOperationError(err, operation, d.targetGVK.Kind, d.targetNameForCluster(clusterName).String(), clusterName)
+}
+
+func (d *unmanagedDispatcherImpl) targetNameForCluster(clusterName string) util.QualifiedName {
+	return util.QualifiedNameForCluster(clusterName, d.targetName)
 }
 
 func wrapOperationError(err error, operation, targetKind, targetName, clusterName string) error {

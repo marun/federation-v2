@@ -194,7 +194,8 @@ func (r *federatedResource) ObjectForCluster(clusterName string) (*unstructured.
 	// TODO(marun) this should be documented
 	obj.SetName(r.federatedResource.GetName())
 	if !r.targetIsNamespace {
-		obj.SetNamespace(r.federatedResource.GetNamespace())
+		namespace := util.NamespaceForCluster(clusterName, r.federatedResource.GetNamespace())
+		obj.SetNamespace(namespace)
 	}
 	targetApiResource := r.typeConfig.GetTargetType()
 	obj.SetKind(targetApiResource.Kind)

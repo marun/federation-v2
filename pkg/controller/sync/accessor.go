@@ -193,7 +193,7 @@ func (a *resourceAccessor) FederatedResource(eventSource util.QualifiedName) (Fe
 		Name:      eventSource.Name,
 	}
 	federatedName := util.QualifiedName{
-		Namespace: eventSource.Namespace,
+		Namespace: util.NamespaceForResource(eventSource.Namespace, a.fedNamespace),
 		Name:      eventSource.Name,
 	}
 
@@ -256,7 +256,7 @@ func (a *resourceAccessor) FederatedResource(eventSource util.QualifiedName) (Fe
 
 	var fedNamespace *unstructured.Unstructured
 	if a.typeConfig.GetNamespaced() {
-		fedNamespaceName := util.QualifiedName{Namespace: targetName.Namespace, Name: targetName.Namespace}
+		fedNamespaceName := util.QualifiedName{Namespace: federatedName.Namespace, Name: federatedName.Namespace}
 		fedNamespace, err = util.ObjFromCache(a.fedNamespaceStore, a.fedNamespaceAPIResource.Kind, fedNamespaceName.String())
 		if err != nil {
 			return nil, false, err

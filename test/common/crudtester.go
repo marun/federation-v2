@@ -331,6 +331,7 @@ func (c *FederatedTypeCrudTester) CheckDelete(fedObject *unstructured.Unstructur
 		stateMsg = "not present"
 	}
 	for clusterName, testCluster := range c.testClusters {
+		namespace = util.QualifiedNameForCluster(clusterName, qualifiedName).Namespace
 		err = wait.PollImmediate(c.waitInterval, waitTimeout, func() (bool, error) {
 			obj, err := testCluster.Client.Resources(namespace).Get(name, metav1.GetOptions{})
 			switch {
@@ -413,7 +414,8 @@ func (c *FederatedTypeCrudTester) CheckPropagation(fedObject *unstructured.Unstr
 		} else if c.targetIsNamespace && clusterName == primaryClusterName {
 			c.checkHostNamespaceUnlabeled(testCluster.Client, qualifiedName, targetKind, clusterName)
 		} else {
-			err := c.waitForResourceDeletion(testCluster.Client, qualifiedName, func() bool {
+			clusterQualifiedName := util.QualifiedNameForCluster(clusterName, qualifiedName)
+			err := c.waitForResourceDeletion(testCluster.Client, clusterQualifiedName, func() bool {
 				version, ok := c.expectedVersion(qualifiedName, templateVersion, overrideVersion, clusterName)
 				return version == "" && ok
 			})

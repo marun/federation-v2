@@ -146,7 +146,8 @@ func NewFederatedInformer(
 		if err != nil {
 			return nil, nil, err
 		}
-		store, controller := NewManagedResourceInformer(resourceClient, config.TargetNamespace, triggerFunc)
+		targetNamespace := NamespaceForCluster(cluster.Name, config.TargetNamespace)
+		store, controller := NewManagedResourceInformer(resourceClient, targetNamespace, triggerFunc)
 		return store, controller, nil
 	}
 

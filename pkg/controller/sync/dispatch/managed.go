@@ -254,13 +254,15 @@ func (d *managedDispatcherImpl) recordOperationError(propStatus status.Propagati
 }
 
 func (d *managedDispatcherImpl) recordError(clusterName, operation string, err error) {
-	args := []interface{}{operation, d.fedResource.TargetKind(), d.fedResource.TargetName(), clusterName}
+	targetName := d.unmanagedDispatcher.targetNameForCluster(clusterName)
+	args := []interface{}{operation, d.fedResource.TargetKind(), targetName, clusterName}
 	eventType := fmt.Sprintf("%sInClusterFailed", strings.Replace(strings.Title(operation), " ", "", -1))
 	d.fedResource.RecordError(eventType, errors.Wrapf(err, "Failed to "+eventTemplate, args...))
 }
 
 func (d *managedDispatcherImpl) recordEvent(clusterName, operation, operationContinuous string) {
-	args := []interface{}{operationContinuous, d.fedResource.TargetKind(), d.fedResource.TargetName(), clusterName}
+	targetName := d.unmanagedDispatcher.targetNameForCluster(clusterName)
+	args := []interface{}{operationContinuous, d.fedResource.TargetKind(), targetName, clusterName}
 	eventType := fmt.Sprintf("%sInCluster", strings.Replace(strings.Title(operation), " ", "", -1))
 	d.fedResource.RecordEvent(eventType, eventTemplate, args...)
 }
