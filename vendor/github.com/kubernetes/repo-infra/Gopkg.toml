@@ -17,11 +17,11 @@ required = [
 
 
 # BEGIN gazelle dependencies
-# Based on https://github.com/bazelbuild/bazel-gazelle/blob/0.10.1/deps.bzl
+# Based on https://github.com/bazelbuild/bazel-gazelle/blob/0.16.0/go.mod
 
 [[constraint]]
   name = "github.com/bazelbuild/bazel-gazelle"
-  version = "0.12.0"
+  version = "0.16.0"
 
 [[constraint]]
   name = "github.com/bazelbuild/buildtools"

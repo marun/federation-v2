@@ -1,8 +1,43 @@
-package(default_visibility = ["//visibility:public"])
+load(":pkg.bzl", "pkg_tar")
+load(":build.bzl", "release_filegroup")
 
 py_binary(
     name = "gcs_uploader",
+    python_version = "PY2",
     srcs = [
         "gcs_uploader.py",
     ],
+    visibility = ["//visibility:public"],
 )
+
+pkg_tar(
+    name = "pkg_tar_smoke",
+    srcs = glob(["*.bzl"]),
+)
+
+# generate the hash files to use in the sh_tests below
+release_filegroup(
+    name = "testfile",
+    testonly = True,
+    srcs = [":testdata/testfile.txt"],
+)
+
+[
+    sh_test(
+        name = "test_gen%ssum" % hash,
+        srcs = ["diff_test.sh"],
+        args = [
+            "$(location testdata/testfile.txt.%s.expected)" % hash,
+            "$(location testdata/testfile.txt.%s)" % hash,
+        ],
+        data = [
+            ":testdata/testfile.txt.%s" % hash,
+            ":testdata/testfile.txt.%s.expected" % hash,
+        ],
+    )
+    for hash in [
+        "md5",
+        "sha1",
+        "sha512",
+    ]
+]

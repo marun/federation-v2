@@ -72,6 +72,8 @@ type APIGroupVersion struct {
 	Linker          runtime.SelfLinker
 	UnsafeConvertor runtime.ObjectConvertor
 
+	EquivalentResourceRegistry runtime.EquivalentResourceRegistry
+
 	// Authorizer determines whether a user is allowed to make a certain request. The Handler does a preliminary
 	// authorization check using the request URI but it may be necessary to make additional checks, such as in
 	// the create-on-update case
@@ -87,6 +89,10 @@ type APIGroupVersion struct {
 
 	// OpenAPIModels exposes the OpenAPI models to each individual handler.
 	OpenAPIModels openapiproto.Models
+
+	// The limit on the request body size that would be accepted and decoded in a write request.
+	// 0 means no limit.
+	MaxRequestBodyBytes int64
 }
 
 // InstallREST registers the REST handlers (storage, watch, proxy and redirect) into a restful Container.

@@ -16,34 +16,34 @@ load("@io_bazel_rules_go//go:def.bzl", "GoLibrary", "GoPath", "go_context", "go_
 
 def _compute_genrule_variables(resolved_srcs, resolved_outs, dep_import_paths):
     variables = {
-        "SRCS": cmd_helper.join_paths(" ", resolved_srcs),
-        "OUTS": cmd_helper.join_paths(" ", resolved_outs),
+        "SRCS": " ".join([src.path for src in resolved_srcs]),
+        "OUTS": " ".join([out.path for out in resolved_outs]),
         "GO_IMPORT_PATHS": " ".join(dep_import_paths),
     }
     if len(resolved_srcs) == 1:
-        variables["<"] = list(resolved_srcs)[0].path
+        variables["<"] = resolved_srcs[0].path
     if len(resolved_outs) == 1:
-        variables["@"] = list(resolved_outs)[0].path
+        variables["@"] = resolved_outs[0].path
     return variables
 
 def _go_genrule_impl(ctx):
     go = go_context(ctx)
 
-    all_srcs = depset(go.sdk.libs + go.sdk.srcs + go.sdk.tools + [go.sdk.go])
+    transitive_depsets = []
     label_dict = {}
     go_paths = []
 
     for dep in ctx.attr.srcs:
-        all_srcs += dep.files
-        label_dict[dep.label] = dep.files
+        transitive_depsets.append(dep.files)
+        label_dict[dep.label] = dep.files.to_list()
 
     dep_import_paths = []
     for dep in ctx.attr.go_deps:
         dep_import_paths.append(dep[GoLibrary].importpath)
 
     for go_path in ctx.attr.go_paths:
-        all_srcs += go_path.files
-        label_dict[go_path.label] = go_path.files
+        transitive_depsets.append(go_path.files)
+        label_dict[go_path.label] = go_path.files.to_list()
 
         gp = go_path[GoPath]
         ext = gp.gopath_file.extension
@@ -55,6 +55,11 @@ def _go_genrule_impl(ctx):
             go_paths.append(gp.gopath_file.dirname)
         else:
             fail("Unknown extension on gopath file: '%s'." % ext)
+
+    all_srcs = depset(
+        go.sdk.libs + go.sdk.srcs + go.sdk.tools + [go.sdk.go],
+        transitive = transitive_depsets,
+    )
 
     cmd = [
         "set -e",
@@ -70,21 +75,23 @@ def _go_genrule_impl(ctx):
         attribute = "cmd",
         expand_locations = True,
         make_variables = _compute_genrule_variables(
-            all_srcs,
-            depset(ctx.outputs.outs),
+            all_srcs.to_list(),
+            ctx.outputs.outs,
             dep_import_paths,
         ),
         tools = ctx.attr.tools,
         label_dict = label_dict,
     )
 
-    paths = ["/bin", "/usr/bin"]
-    ctx.action(
-        inputs = list(all_srcs) + resolved_inputs,
+    env = {}
+    env.update(ctx.configuration.default_shell_env)
+    env.update(go.env)
+    env["PATH"] = ctx.configuration.host_path_separator.join(["/bin", "/usr/bin"])
+
+    ctx.actions.run_shell(
+        inputs = depset(resolved_inputs, transitive = [all_srcs]),
         outputs = ctx.outputs.outs,
-        env = ctx.configuration.default_shell_env + go.env + {
-            "PATH": ctx.configuration.host_path_separator.join(paths),
-        },
+        env = env,
         command = argv,
         progress_message = "%s %s" % (ctx.attr.message, ctx),
         mnemonic = "GoGenrule",

@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
 import argparse
 import atexit
 import os
@@ -77,7 +78,7 @@ def main(argv):
 
         uploaded_paths.append(gcs_path)
 
-    print "Uploaded to %s" % " ".join(uploaded_paths)
+    print("Uploaded to %s" % " ".join(uploaded_paths))
     sys.exit(ret)
 
 

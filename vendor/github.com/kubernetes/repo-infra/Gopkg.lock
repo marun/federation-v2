@@ -2,75 +2,68 @@
 
 
 [[projects]]
-  digest = "1:87528fa26d9113c067d76fec99c39fc9b7c43d5f54e358b849859e8ce187ee8a"
   name = "github.com/bazelbuild/bazel-gazelle"
   packages = [
     "cmd/gazelle",
-    "internal/config",
-    "internal/generator",
-    "internal/label",
-    "internal/merger",
-    "internal/packages",
-    "internal/pathtools",
-    "internal/repos",
-    "internal/resolve",
+    "config",
+    "flag",
     "internal/version",
     "internal/wspace",
+    "label",
+    "language",
+    "language/go",
+    "language/proto",
+    "merger",
+    "pathtools",
+    "repo",
+    "resolve",
+    "rule",
+    "walk"
   ]
-  pruneopts = "NUT"
-  revision = "7f30ba724af9495b221e2df0f5ac58511179485f"
-  version = "0.12.0"
+  revision = "cdeedbd624679ca4522da9670f2b3d02e9f8b84d"
+  version = "0.16.0"
 
 [[projects]]
-  digest = "1:03679414789b10f815a33667d29e3c77e57c8096bd32457fd1682a4222f25806"
   name = "github.com/bazelbuild/buildtools"
   packages = [
     "build",
-    "tables",
+    "tables"
   ]
-  pruneopts = "NUT"
   revision = "80c7f0d45d7e40fa1f7362852697d4a03df557b3"
 
 [[projects]]
-  digest = "1:13b8f1a2ce177961dc9231606a52f709fab896c565f3988f60a7f6b4e543a902"
   name = "github.com/pelletier/go-toml"
   packages = ["."]
-  pruneopts = "NUT"
   revision = "acdc4509485b587f5e675510c4f2c63e90ff68a8"
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/pmezard/go-difflib"
+  packages = ["difflib"]
+  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
+  version = "v1.0.0"
+
+[[projects]]
   branch = "master"
-  digest = "1:39b451c653a9512a341164753bdc936b929aa9691a2f0a44abd2cded2e88950c"
   name = "golang.org/x/build"
   packages = ["pargzip"]
-  pruneopts = "NUT"
   revision = "125f04e1fc4b4cbfed95e5dd72a435fcb3847608"
 
 [[projects]]
   branch = "master"
-  digest = "1:5be82f561581d3b177fe74d1a52165afb5f51832b8816f481e1c7c8ad334bf11"
   name = "golang.org/x/tools"
   packages = ["go/vcs"]
-  pruneopts = "NUT"
   revision = "77106db15f689a60e7d4e085d967ac557b918fb2"
 
 [[projects]]
   branch = "master"
-  digest = "1:9cc257b3c9ff6a0158c9c661ab6eebda1fe8a4a4453cd5c4044dc9a2ebfb992b"
   name = "k8s.io/klog"
   packages = ["."]
-  pruneopts = "NUT"
   revision = "b9b56d5dfc9208f60ea747056670942d8b0afdc8"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  input-imports = [
-    "github.com/bazelbuild/bazel-gazelle/cmd/gazelle",
-    "github.com/bazelbuild/buildtools/build",
-    "golang.org/x/build/pargzip",
-    "k8s.io/klog",
-  ]
+  inputs-digest = "09d2c0bcac0bf2579799808ceb710c97d4857c37ad06f4df039d5a3a81f0e431"
   solver-name = "gps-cdcl"
   solver-version = 1

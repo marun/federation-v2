@@ -19,7 +19,11 @@ load(
 
 # pkg_tar wraps the official pkg_tar rule with our faster
 # Go-based build_tar binary.
-def pkg_tar(**kwargs):
-    if "build_tar" not in kwargs:
-        kwargs["build_tar"] = "@io_kubernetes_build//tools/build_tar"
-    _real_pkg_tar(**kwargs)
+# Additionally, the upstream pkg_tar rule defaults mode to "0555",
+# which prevents build_tar from automatically choosing an
+# appropriate mode, so we instead default it to "".
+def pkg_tar(
+        build_tar = "@io_k8s_repo_infra//tools/build_tar",
+        mode = "",
+        **kwargs):
+    _real_pkg_tar(build_tar = build_tar, mode = mode, **kwargs)
