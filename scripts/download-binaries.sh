@@ -43,7 +43,7 @@ mkdir -p "${dest_dir}"
 
 platform=$(uname -s|tr A-Z a-z)
 
-kb_version="1.0.8"
+kb_version="2.0.0"
 kb_tgz="kubebuilder_${kb_version}_${platform}_amd64.tar.gz"
 kb_url="https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${kb_version}/${kb_tgz}"
 curl "${curl_args}O" "${kb_url}" \
