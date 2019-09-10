@@ -27,7 +27,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/labels"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/klog"
@@ -243,13 +242,8 @@ func (s *ReplicaScheduler) GetSchedulingResult(rsp *fedschedulingv1a1.ReplicaSch
 			return nil, errors.Wrap(err, "error retrieving selector from object")
 		}
 
-		label := labels.SelectorFromSet(labels.Set(selectorLabels))
-		opts := &crclient.ListOptions{
-			Namespace:     unstructuredObj.GetNamespace(),
-			LabelSelector: label,
-		}
 		podList := &corev1.PodList{}
-		err = client.ListWithOptions(context.Background(), opts, podList)
+		err = client.List(context.Background(), podList, unstructuredObj.GetNamespace(), crclient.MatchingLabels(selectorLabels))
 		if err != nil {
 			return nil, err
 		}
