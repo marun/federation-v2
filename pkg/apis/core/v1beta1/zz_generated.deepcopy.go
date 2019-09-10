@@ -182,7 +182,7 @@ func (in *FederatedTypeConfig) DeepCopyObject() runtime.Object {
 func (in *FederatedTypeConfigList) DeepCopyInto(out *FederatedTypeConfigList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]FederatedTypeConfig, len(*in))
@@ -292,7 +292,7 @@ func (in *KubeFedCluster) DeepCopyObject() runtime.Object {
 func (in *KubeFedClusterList) DeepCopyInto(out *KubeFedClusterList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]KubeFedCluster, len(*in))
@@ -412,7 +412,7 @@ func (in *KubeFedConfig) DeepCopyObject() runtime.Object {
 func (in *KubeFedConfigList) DeepCopyInto(out *KubeFedConfigList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]KubeFedConfig, len(*in))

@@ -71,7 +71,7 @@ func (in *ClusterPropagatedVersion) DeepCopyObject() runtime.Object {
 func (in *ClusterPropagatedVersionList) DeepCopyInto(out *ClusterPropagatedVersionList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]ClusterPropagatedVersion, len(*in))
@@ -170,7 +170,7 @@ func (in *FederatedServiceStatus) DeepCopyObject() runtime.Object {
 func (in *FederatedServiceStatusList) DeepCopyInto(out *FederatedServiceStatusList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]FederatedServiceStatus, len(*in))
@@ -230,7 +230,7 @@ func (in *PropagatedVersion) DeepCopyObject() runtime.Object {
 func (in *PropagatedVersionList) DeepCopyInto(out *PropagatedVersionList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]PropagatedVersion, len(*in))

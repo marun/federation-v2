@@ -77,7 +77,7 @@ func (in *ReplicaSchedulingPreference) DeepCopyObject() runtime.Object {
 func (in *ReplicaSchedulingPreferenceList) DeepCopyInto(out *ReplicaSchedulingPreferenceList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]ReplicaSchedulingPreference, len(*in))
