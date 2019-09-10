@@ -350,7 +350,7 @@ func customResourcesExist(config *rest.Config, resource *metav1.APIResource) (bo
 		return false, err
 	}
 
-	options := metav1.ListOptions{IncludeUninitialized: true}
+	options := metav1.ListOptions{}
 	objList, err := client.Resources("").List(options)
 	if apierrors.IsNotFound(err) {
 		return false, nil
