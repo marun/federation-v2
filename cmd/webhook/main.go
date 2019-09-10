@@ -20,7 +20,7 @@ import (
 	"flag"
 
 	genericapiserver "k8s.io/apiserver/pkg/server"
-	"k8s.io/apiserver/pkg/util/logs"
+	"k8s.io/component-base/logs"
 	"k8s.io/klog"
 
 	"sigs.k8s.io/kubefed/pkg/webhook"

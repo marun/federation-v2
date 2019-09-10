@@ -23,8 +23,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	apiserverflag "k8s.io/apiserver/pkg/util/flag"
 	"k8s.io/client-go/tools/clientcmd"
+	apiserverflag "k8s.io/component-base/cli/flag"
 
 	"sigs.k8s.io/kubefed/pkg/kubefedctl/enable"
 	"sigs.k8s.io/kubefed/pkg/kubefedctl/federate"

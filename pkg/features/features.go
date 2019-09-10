@@ -18,6 +18,7 @@ package features
 
 import (
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
+	"k8s.io/component-base/featuregate"
 	"k8s.io/klog"
 )
 
@@ -26,36 +27,36 @@ const (
 	//
 	// // owner: @username
 	// // alpha: v1.X
-	// MyFeature utilfeature.Feature = "MyFeature"
+	// MyFeature featuregate.Feature = "MyFeature"
 
 	// owner: @marun
 	// alpha: v0.1
 	//
 	// PushReconciler ensures that managed resources in member clusters represent the state declared in federated resources.
-	PushReconciler utilfeature.Feature = "PushReconciler"
+	PushReconciler featuregate.Feature = "PushReconciler"
 
 	// owner: @irfanurrehman
 	// alpha: v0.1
 	//
 	// Scheduler controllers which dynamically schedules workloads based on user preferences.
-	SchedulerPreferences utilfeature.Feature = "SchedulerPreferences"
+	SchedulerPreferences featuregate.Feature = "SchedulerPreferences"
 
 	// owner: @kubernetes-sigs/kubefed-maintainers
 	// alpha: v0.1
 	//
 	// DNS based cross cluster service discovery.
 	// https://github.com/kubernetes/community/blob/master/contributors/design-proposals/multicluster/federated-services.md
-	CrossClusterServiceDiscovery utilfeature.Feature = "CrossClusterServiceDiscovery"
+	CrossClusterServiceDiscovery featuregate.Feature = "CrossClusterServiceDiscovery"
 
 	// owner: @shashidharatd
 	// alpha: v0.1
 	//
 	// DNS based federated ingress feature.
-	FederatedIngress utilfeature.Feature = "FederatedIngress"
+	FederatedIngress featuregate.Feature = "FederatedIngress"
 )
 
 func init() {
-	if err := utilfeature.DefaultFeatureGate.Add(DefaultKubeFedFeatureGates); err != nil {
+	if err := utilfeature.DefaultMutableFeatureGate.Add(DefaultKubeFedFeatureGates); err != nil {
 		klog.Fatalf("Unexpected error: %v", err)
 	}
 }
@@ -63,9 +64,9 @@ func init() {
 // DefaultKubeFedFeatureGates consists of all known KubeFed-specific
 // feature keys.  To add a new feature, define a key for it above and
 // add it here.
-var DefaultKubeFedFeatureGates = map[utilfeature.Feature]utilfeature.FeatureSpec{
-	SchedulerPreferences:         {Default: true, PreRelease: utilfeature.Alpha},
-	PushReconciler:               {Default: true, PreRelease: utilfeature.Beta},
-	CrossClusterServiceDiscovery: {Default: true, PreRelease: utilfeature.Alpha},
-	FederatedIngress:             {Default: true, PreRelease: utilfeature.Alpha},
+var DefaultKubeFedFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{
+	SchedulerPreferences:         {Default: true, PreRelease: featuregate.Alpha},
+	PushReconciler:               {Default: true, PreRelease: featuregate.Beta},
+	CrossClusterServiceDiscovery: {Default: true, PreRelease: featuregate.Alpha},
+	FederatedIngress:             {Default: true, PreRelease: featuregate.Alpha},
 }
